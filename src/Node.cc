@@ -26,13 +26,14 @@ void Node::send_data(){
     mmsg->setAckSeq_Num((frame_expected+MAX_SEQ)%(MAX_SEQ+1));
     MyMessage_Base* dmsg=mmsg->dup();
     // send to whom?
-    int rand=uniform(0,1)*10;
+    int rand1=uniform(0,1)*10;
       // EV<<"rand is "<<std::to_string(rand)<<endl;
-       if(rand>=par("pLoss").intValue()) // prob to delay the message
+       if(rand1>=par("pLoss").intValue()) // prob to delay the message
        {
            send(mmsg,"outs",dest);
        }
-       if(rand<par("pDup").intValue()) // prob to delay the message
+       int rand2=uniform(0,1)*10;
+       if(rand2<par("pDup").intValue()) // prob to delay the message
        {
            send(dmsg,"outs",dest);
        }
