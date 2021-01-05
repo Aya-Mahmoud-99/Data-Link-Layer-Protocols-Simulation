@@ -19,6 +19,10 @@
 #include <omnetpp.h>
 #include <bitset>
 #include "MyMessage_m.h"
+#include <iostream>
+#include <cmath>
+#include <vector>
+#include <fstream>
 using namespace omnetpp;
 
 
@@ -43,8 +47,10 @@ class Node : public cSimpleModule
     int ack_expected;
     int frame_expected;
     // node wa7da wala kter?
-    std::string buffer[MAX_SEQ+1];
-    int dest [MAX_SEQ+1];
+    std::vector<std::string> buffer;
+    int dest;
+    std::string fileName;
+    //int dest [MAX_SEQ+1];
     int nbuffered;
     virtual void initialize();
 

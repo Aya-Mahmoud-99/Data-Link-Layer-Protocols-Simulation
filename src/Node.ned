@@ -22,6 +22,9 @@ simple Node
 {
     parameters:
         int n = default(4);
+        double lambda = default(2.0);
+        int pLoss=default(3);
+        
     gates:
         input ins[];
         output outs[];

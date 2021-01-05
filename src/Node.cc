@@ -24,8 +24,18 @@ void Node::send_data(){
     mmsg->setSeq_Num(next_frame_to_send);
     // to ask
     mmsg->setAckSeq_Num((frame_expected+MAX_SEQ)%(MAX_SEQ+1));
+    MyMessage_Base* dmsg=mmsg->dup();
     // send to whom?
-    send(mmsg,"outs",dest[next_frame_to_send]);
+    int rand=uniform(0,1)*10;
+      // EV<<"rand is "<<std::to_string(rand)<<endl;
+       if(rand>=par("pLoss").intValue()) // prob to delay the message
+       {
+           send(mmsg,"outs",dest);
+       }
+       if(rand<par("pDup").intValue()) // prob to delay the message
+       {
+           send(dmsg,"outs",dest);
+       }
     scheduleAt(simTime() + timeInterval, timer);
 }
 bool Node::between(int a,int b,int c){
@@ -99,12 +109,52 @@ void Node::handleMessage(cMessage *msg)
             inc(next_frame_to_send);
         }
     }
+    // a file received from parent module
     if(mmsg->getM_Type()==2){
-        dest[next_frame_to_send]=atoi(mmsg->getName());
-        buffer[next_frame_to_send]=mmsg->getM_Payload();
-        nbuffered=nbuffered+1;
-        send_data();
-        inc(next_frame_to_send);
+        dest=atoi(mmsg->getName());
+        fileName=mmsg->getM_Payload();
+        std::ifstream fileIn;
+        fileIn.open(fileName);
+       // int interval=0;
+        while (!fileIn.eof())
+        {
+            std::string str;
+            fileIn >> str;
+            MyMessage_Base* smsg=new MyMessage_Base("Hello");
+
+            smsg->setM_Payload(str.c_str());
+            smsg->setM_Type(3);
+            // call function to add haming code check bits
+            // call function to randomize error
+            // to ask
+            double interval = exponential(1 / par("lambda").doubleValue());
+            scheduleAt(simTime() + interval, smsg);
+            //interval++;
+           // buffer.push_back(str);
+           // nbuffered=nbuffered+1;
+        }
+      /*  MyMessage_Base* smsg=new MyMessage_Base("Hello");
+        smsg->setM_Type(4);
+        // call function to add haming code check bits
+        // call function to randomize error
+        // to ask
+        scheduleAt(simTime() + interval, smsg);*/
+       // send_data();
+     //   inc(next_frame_to_send);
+    }
+    // the node scheduled this data to it self when it read it from the file
+    if(mmsg->getM_Type()==3){
+
+            buffer.push_back(mmsg->getM_Payload());
+            nbuffered=nbuffered+1;
+            send_data();
+            inc(next_frame_to_send);
+    }
+    // the node scheduled this data to it self when it readed it from the file
+    if(mmsg->getM_Type()==4){
+        MyMessage_Base* smsg=new MyMessage_Base("Hello");
+        smsg->setM_Type(4);
+        send(smsg,"outs",dest);
 
     }
 
