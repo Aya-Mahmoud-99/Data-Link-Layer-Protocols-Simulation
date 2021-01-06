@@ -32,12 +32,18 @@ void Node::send_data(){
        {
            send(mmsg,"outs",dest);
        }
+       else{
+           dropped_frames++;
+       }
        int rand2=uniform(0,1)*10;
        if(rand2<par("pDup").intValue()) // prob to delay the message
        {
-           send(dmsg,"outs",dest);
+           //send(dmsg,"outs",dest);
+           double interval = exponential(1 / par("lambda").doubleValue());
+           //scheduleAt(simTime() + interval, dmsg,"outs",dest);
+           sendDelayed(dmsg, interval,"outs",dest);
        }
-    scheduleAt(simTime() + timeInterval, timer);
+    scheduleAt(simTime() + timeInterval, timer[next_frame_to_send]);
 }
 bool Node::between(int a,int b,int c){
     if( ((a<=b)&&(b<c)) || ((c<a)&&(a<=b)) ||((b<c)&&(c<a)) ) return true;
@@ -97,8 +103,30 @@ void Node::handleMessage(cMessage *msg)
     }
     while(between(ack_expected, mmsg->getAckSeq_Num(), next_frame_to_send)){
         nbuffered=nbuffered-1;
-        cancelAndDelete(timer);
+        cancelAndDelete(timer[ack_expected]);
         inc(ack_expected);
+    }
+    while (!fileIn.eof())
+    {
+        if(nbuffered>MAX_SEQ)break;
+        std::string str;
+        fileIn >> str;
+        //MyMessage_Base* smsg=new MyMessage_Base("Hello");
+
+        //smsg->setM_Payload(str.c_str());
+        //smsg->setM_Type(3);
+        // call function to add haming code check bits
+        // call function to randomize error
+        // to ask
+        //double interval = exponential(1 / par("lambda").doubleValue());
+        //scheduleAt(simTime() + interval, smsg);
+        //interval++;
+       // buffer.push_back(str);
+       // nbuffered=nbuffered+1;
+        buffer.push_back(str);
+        nbuffered=nbuffered+1;
+        send_data();
+        inc(next_frame_to_send);
     }
     }
     //if the message is time out
@@ -106,6 +134,7 @@ void Node::handleMessage(cMessage *msg)
 
         next_frame_to_send=ack_expected;
         for(int i=0;i<nbuffered;i++){
+            retransmitted_frames++;
             send_data();
             inc(next_frame_to_send);
         }
@@ -114,26 +143,31 @@ void Node::handleMessage(cMessage *msg)
     if(mmsg->getM_Type()==2){
         dest=atoi(mmsg->getName());
         fileName=mmsg->getM_Payload();
-        std::ifstream fileIn;
         fileIn.open(fileName);
        // int interval=0;
         while (!fileIn.eof())
         {
+            if(nbuffered>MAX_SEQ)break;
             std::string str;
             fileIn >> str;
-            MyMessage_Base* smsg=new MyMessage_Base("Hello");
+            //MyMessage_Base* smsg=new MyMessage_Base("Hello");
 
-            smsg->setM_Payload(str.c_str());
-            smsg->setM_Type(3);
+            //smsg->setM_Payload(str.c_str());
+            //smsg->setM_Type(3);
             // call function to add haming code check bits
             // call function to randomize error
             // to ask
-            double interval = exponential(1 / par("lambda").doubleValue());
-            scheduleAt(simTime() + interval, smsg);
+            //double interval = exponential(1 / par("lambda").doubleValue());
+            //scheduleAt(simTime() + interval, smsg);
             //interval++;
            // buffer.push_back(str);
            // nbuffered=nbuffered+1;
+            buffer.push_back(str);
+            nbuffered=nbuffered+1;
+            send_data();
+            inc(next_frame_to_send);
         }
+    }
       /*  MyMessage_Base* smsg=new MyMessage_Base("Hello");
         smsg->setM_Type(4);
         // call function to add haming code check bits
@@ -144,26 +178,28 @@ void Node::handleMessage(cMessage *msg)
      //   inc(next_frame_to_send);
     }
     // the node scheduled this data to it self when it read it from the file
-    if(mmsg->getM_Type()==3){
+   /* if(mmsg->getM_Type()==3){
 
             buffer.push_back(mmsg->getM_Payload());
             nbuffered=nbuffered+1;
             send_data();
             inc(next_frame_to_send);
-    }
+    }*/
     // the node scheduled this data to it self when it readed it from the file
-    if(mmsg->getM_Type()==4){
+   /* if(mmsg->getM_Type()==4){
         MyMessage_Base* smsg=new MyMessage_Base("Hello");
         smsg->setM_Type(4);
         send(smsg,"outs",dest);
 
     }
 
-}
+}*/
 int Node::received_messages=0;
-int Node::sent_messages=0;
+int Node::generated_frames=0;//toddddddo
 int Node::retransmitted_frames=0;
 int Node::total_transmitted_data=0;
+int Node::dropped_frames=0;
+int Node::useful_transmitted_data=0;//todooooooooooooooooooo
 
 
 

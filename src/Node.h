@@ -36,12 +36,15 @@ class Node : public cSimpleModule
     void inc(int &k);
   protected:
     // to calculate
+    std::ifstream fileIn;
     int timeInterval=10;
-    MyMessage_Base * timer;
+    MyMessage_Base * timer[MAX_SEQ+1];
     static int received_messages;
-    static int sent_messages;
+    static int generated_frames;
     static int retransmitted_frames;
     static int total_transmitted_data;
+    static int dropped_frames;
+    static int useful_transmitted_data;
     static bool between(int a,int b,int c);
     int next_frame_to_send;
     int ack_expected;
