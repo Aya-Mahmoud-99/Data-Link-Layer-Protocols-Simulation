@@ -22,22 +22,33 @@ void Parent::initialize()
 {
     // TODO - Generated method body
     // choose pairs to talk randomly every 30 seconds with a probability of 50% that no pairs start talking at all at this time step.
-   while(){
-       int rand=uniform(0,1)*10;
-       if(rand<5){
-           int node1=unifornm(0,1)*par("n").intValue();
-           int node2=unifornm(0,1)*par("n").intValue();
-           MyMessage_Base* mmsg=new MyMessage_Base(to_string(node1),2);
-          // mmsg->setM_Type(2);
-           //mmsg->setName(s);
-           //dest=atoi(mmsg->getName());
-           //fileName=mmsg->getM_Payload();
-       }
-       sleep(30);
-    }
+    double interval = exponential(1 / par("lambda").doubleValue());
+    scheduleAt(simTime() + interval, new cMessage(""));
+
 }
 
 void Parent::handleMessage(cMessage *msg)
 {
     // TODO - Generated method body
+    int i=0;
+      while(true){
+          int rand=uniform(0,1)*10;
+          if(rand<5){
+              int node1=uniform(0,1)*par("n").intValue();
+              int node2=uniform(0,1)*par("n").intValue();
+              MyMessage_Base* mmsg=new MyMessage_Base(std::to_string(node1).c_str(),2);
+             // sleep(10);
+              mmsg->setM_Payload(("file"+std::to_string(i++)).c_str());
+              send(mmsg,"outs",node2);
+               MyMessage_Base* mmmsg=new MyMessage_Base(std::to_string(node2).c_str(),2);
+              mmmsg->setM_Payload(("file"+std::to_string(i++)).c_str());
+              send(mmmsg,"outs",node1);
+              if(i>0)break;
+             // mmsg->setM_Type(2);
+              //mmsg->setName(s);
+              //dest=atoi(mmsg->getName());
+              //fileName=mmsg->getM_Payload();
+          }
+          sleep(30);
+       }
 }

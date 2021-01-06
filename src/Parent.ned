@@ -20,8 +20,9 @@ package section1;
 //
 simple Parent
 {
-        parameters:
-        int n = default(5);
-        gates:
+    parameters:
+        double lambda = default(2.0);
+        int n = default(4);
+    gates:
         output outs[];
 }
