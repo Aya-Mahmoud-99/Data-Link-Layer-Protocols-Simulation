@@ -106,7 +106,7 @@ void Node::handleMessage(cMessage *msg)
         cancelAndDelete(timer[ack_expected]);
         inc(ack_expected);
     }
-    while (!fileIn.eof())
+   /* while (!fileIn.eof())
     {
         if(nbuffered>MAX_SEQ)break;
         std::string str;
@@ -127,7 +127,7 @@ void Node::handleMessage(cMessage *msg)
         nbuffered=nbuffered+1;
         send_data();
         inc(next_frame_to_send);
-    }
+    }*/
     }
     //if the message is time out
     if(mmsg->getM_Type()==1){
