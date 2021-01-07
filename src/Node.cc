@@ -70,7 +70,7 @@ void Node::handleMessage(cMessage *msg)
 {
     MyMessage_Base *mmsg = check_and_cast<MyMessage_Base *>(msg);
     // if the message is data and ack
-    if(mmsg->getM_Type()==0){
+    if(mmsg->getM_Type()==0&&!endSession){
         EV<<"DATA";
     if(mmsg->getSeq_Num()==frame_expected){
         received_messages++;
@@ -85,11 +85,9 @@ void Node::handleMessage(cMessage *msg)
     }
     //if the session has ended
     if(mmsg->getM_Type()==3){
-        for(int i=0;i<MAX_SEQ+1;i++){
-           if(timer[i]) cancelAndDelete(timer[i]);
-        }
+        endSession=true;
     }
-   if(mmsg->getM_Type()==1){
+   if(mmsg->getM_Type()==1&&!endSession){
        EV<<"TIME OUT";
         next_frame_to_send=ack_expected;
         for(int i=0;i<nbuffered;i++){
@@ -101,6 +99,11 @@ void Node::handleMessage(cMessage *msg)
    // }
     // a file received from parent module
     if(mmsg->getM_Type()==2){
+        next_frame_to_send=0;
+        ack_expected=0;
+        frame_expected=0;
+        nbuffered=0;
+        endSession=false;
         EV<<"FILE";
         dest=atoi(mmsg->getName());
         fileName=mmsg->getM_Payload();
@@ -109,21 +112,46 @@ void Node::handleMessage(cMessage *msg)
        // int interval=0;
         EV<<fileName;
         std::string str;
+        noElementsFile=0;
+
         while (!getline (fileIn, str))
         {
+            noElementsFile++;
             if(nbuffered>MAX_SEQ)break;
            // std::string str;
             fileIn >> str;
             EV<<str<<std::endl;
             buffer.push_back(str);
             nbuffered=nbuffered+1;
-            send_data();
-            inc(next_frame_to_send);
+          //  send_data();
+         //   inc(next_frame_to_send);
         }
-        MyMessage_Base* fmsg=new MyMessage_Base("Hello");
-        fmsg->setM_Type(3);
-        send(fmsg,"outs",dest);
+       // MyMessage_Base* fmsg=new MyMessage_Base("Hello");
+       // fmsg->setM_Type(3);
+       // send(fmsg,"outs",dest);
+            MyMessage_Base* schedmsg=new MyMessage_Base("Hello");
+
+        schedmsg->setM_Type(4);
+        double interval = exponential(1 / par("lambda").doubleValue());
+        scheduleAt(simTime() +0.5+ interval, schedmsg);
     }
+    // a file received from parent module
+    if(mmsg->getM_Type()==4&&!endSession){
+        send_data();
+        inc(next_frame_to_send);
+        MyMessage_Base* schedmsg=new MyMessage_Base("Hello");
+        noElementsFile--;
+        schedmsg->setM_Type(4);
+        if(noElementsFile!=0)scheduleAt(simTime() + 0.5,schedmsg);
+        else {
+            schedmsg->setM_Type(3);
+            send(schedmsg,"outs",dest);
+            endSession=true;
+        }
+       // double interval = exponential(1 / par("lambda").doubleValue());
+
+    }
+
     }
 int Node::received_messages=0;
 int Node::generated_frames=0;//toddddddo

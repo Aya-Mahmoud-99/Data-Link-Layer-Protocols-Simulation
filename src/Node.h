@@ -37,6 +37,7 @@ class Node : public cSimpleModule
   protected:
     // to calculate
     std::ifstream fileIn;
+    int noElementsFile;
     int timeInterval=100000;
     bool endSession;
     MyMessage_Base* timer[MAX_SEQ+1];
