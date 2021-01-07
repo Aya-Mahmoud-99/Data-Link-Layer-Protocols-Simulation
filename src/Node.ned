@@ -24,6 +24,7 @@ simple Node
         int n = default(4);
         double lambda = default(2.0);
         int pLoss=default(3);
+        int pDup=default(3);
         
     gates:
         input ins[];

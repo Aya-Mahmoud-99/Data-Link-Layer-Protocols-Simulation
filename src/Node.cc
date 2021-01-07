@@ -24,6 +24,7 @@ void Node::send_data(){
     mmsg->setSeq_Num(next_frame_to_send);
     // to ask
     mmsg->setAckSeq_Num((frame_expected+MAX_SEQ)%(MAX_SEQ+1));
+    mmsg->setM_Type(0);
     MyMessage_Base* dmsg=mmsg->dup();
     // send to whom?
     int rand1=uniform(0,1)*10;
@@ -35,15 +36,17 @@ void Node::send_data(){
        else{
            dropped_frames++;
        }
-       int rand2=uniform(0,1)*10;
+      /* int rand2=uniform(0,1)*10;
        if(rand2<par("pDup").intValue()) // prob to delay the message
        {
            //send(dmsg,"outs",dest);
            double interval = exponential(1 / par("lambda").doubleValue());
            //scheduleAt(simTime() + interval, dmsg,"outs",dest);
            sendDelayed(dmsg, interval,"outs",dest);
-       }
-    scheduleAt(simTime() + timeInterval, timer[next_frame_to_send]);
+       }*/
+       timer[next_frame_to_send] =new MyMessage_Base("timer");
+       timer[next_frame_to_send]->setM_Type(1);
+       scheduleAt(simTime() + timeInterval, timer[next_frame_to_send]);
 }
 bool Node::between(int a,int b,int c){
     if( ((a<=b)&&(b<c)) || ((c<a)&&(a<=b)) ||((b<c)&&(c<a)) ) return true;
@@ -60,42 +63,14 @@ void Node::initialize()
     ack_expected=0;
     frame_expected=0;
     nbuffered=0;
-   /* if ( strcmp(getName(),"Tic")==0)
-    {
-        MyMessage_Base * msg = new MyMessage_Base("Hello");
-        msg->setM_Payload("hi there!");
-        msg->setM_Type(1);
-        msg->setSeq_Num(12);
-        std::bitset<8> temp('A');
-        msg->setMycheckbits(temp);
-      send(msg,"out");
-    }*/
 }
 
 void Node::handleMessage(cMessage *msg)
 {
-    /*// TODO - Generated method body
-    MyMessage_Base *mmsg = check_and_cast<MyMessage_Base *>(msg);
-    EV<<"received message with sequence number ...   ";
-    EV << mmsg->getSeq_Num();
-    EV<<"  and payload of ... ";
-    EV<< mmsg->getM_Payload();
-    EV<<"   and check bits of ...";
-    EV<< mmsg->getMycheckbits().to_string();
-
-    int rand=uniform(0,1)*10;
-       EV<<"rand is "<<std::to_string(rand)<<endl;
-       if(rand<8) // prob to delay the message
-       {
-           std::string mypayload= mmsg->getM_Payload();
-           mypayload[0]=mypayload[0]+5;
-           mmsg->setM_Payload(mypayload.c_str());
-       }
-
-    send(mmsg,"out");*/
     MyMessage_Base *mmsg = check_and_cast<MyMessage_Base *>(msg);
     // if the message is data and ack
     if(mmsg->getM_Type()==0){
+        EV<<"DATA";
     if(mmsg->getSeq_Num()==frame_expected){
         received_messages++;
         //correct using haming code
@@ -106,32 +81,10 @@ void Node::handleMessage(cMessage *msg)
         cancelAndDelete(timer[ack_expected]);
         inc(ack_expected);
     }
-   /* while (!fileIn.eof())
-    {
-        if(nbuffered>MAX_SEQ)break;
-        std::string str;
-        fileIn >> str;
-        //MyMessage_Base* smsg=new MyMessage_Base("Hello");
-
-        //smsg->setM_Payload(str.c_str());
-        //smsg->setM_Type(3);
-        // call function to add haming code check bits
-        // call function to randomize error
-        // to ask
-        //double interval = exponential(1 / par("lambda").doubleValue());
-        //scheduleAt(simTime() + interval, smsg);
-        //interval++;
-       // buffer.push_back(str);
-       // nbuffered=nbuffered+1;
-        buffer.push_back(str);
-        nbuffered=nbuffered+1;
-        send_data();
-        inc(next_frame_to_send);
-    }*/
     }
     //if the message is time out
-    if(mmsg->getM_Type()==1){
-
+   if(mmsg->getM_Type()==1){
+       EV<<"TIME OUT";
         next_frame_to_send=ack_expected;
         for(int i=0;i<nbuffered;i++){
             retransmitted_frames++;
@@ -141,59 +94,27 @@ void Node::handleMessage(cMessage *msg)
     }
     // a file received from parent module
     if(mmsg->getM_Type()==2){
+        EV<<"FILE";
         dest=atoi(mmsg->getName());
         fileName=mmsg->getM_Payload();
+
         fileIn.open(fileName);
        // int interval=0;
-        while (!fileIn.eof())
+        EV<<fileName;
+        std::string str;
+        while (!getline (fileIn, str))
         {
             if(nbuffered>MAX_SEQ)break;
-            std::string str;
+           // std::string str;
             fileIn >> str;
-            //MyMessage_Base* smsg=new MyMessage_Base("Hello");
-
-            //smsg->setM_Payload(str.c_str());
-            //smsg->setM_Type(3);
-            // call function to add haming code check bits
-            // call function to randomize error
-            // to ask
-            //double interval = exponential(1 / par("lambda").doubleValue());
-            //scheduleAt(simTime() + interval, smsg);
-            //interval++;
-           // buffer.push_back(str);
-           // nbuffered=nbuffered+1;
+            EV<<str<<std::endl;
             buffer.push_back(str);
             nbuffered=nbuffered+1;
             send_data();
             inc(next_frame_to_send);
         }
     }
-      /*  MyMessage_Base* smsg=new MyMessage_Base("Hello");
-        smsg->setM_Type(4);
-        // call function to add haming code check bits
-        // call function to randomize error
-        // to ask
-        scheduleAt(simTime() + interval, smsg);*/
-       // send_data();
-     //   inc(next_frame_to_send);
     }
-    // the node scheduled this data to it self when it read it from the file
-   /* if(mmsg->getM_Type()==3){
-
-            buffer.push_back(mmsg->getM_Payload());
-            nbuffered=nbuffered+1;
-            send_data();
-            inc(next_frame_to_send);
-    }*/
-    // the node scheduled this data to it self when it readed it from the file
-   /* if(mmsg->getM_Type()==4){
-        MyMessage_Base* smsg=new MyMessage_Base("Hello");
-        smsg->setM_Type(4);
-        send(smsg,"outs",dest);
-
-    }
-
-}*/
 int Node::received_messages=0;
 int Node::generated_frames=0;//toddddddo
 int Node::retransmitted_frames=0;
