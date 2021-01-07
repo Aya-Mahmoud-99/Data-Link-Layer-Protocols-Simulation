@@ -38,6 +38,7 @@ class Node : public cSimpleModule
     // to calculate
     std::ifstream fileIn;
     int timeInterval=100000;
+    bool endSession;
     MyMessage_Base* timer[MAX_SEQ+1];
     static int received_messages;
     static int generated_frames;

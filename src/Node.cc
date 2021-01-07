@@ -36,14 +36,14 @@ void Node::send_data(){
        else{
            dropped_frames++;
        }
-      /* int rand2=uniform(0,1)*10;
+       int rand2=uniform(0,1)*10;
        if(rand2<par("pDup").intValue()) // prob to delay the message
        {
            //send(dmsg,"outs",dest);
            double interval = exponential(1 / par("lambda").doubleValue());
            //scheduleAt(simTime() + interval, dmsg,"outs",dest);
            sendDelayed(dmsg, interval,"outs",dest);
-       }*/
+       }
        timer[next_frame_to_send] =new MyMessage_Base("timer");
        timer[next_frame_to_send]->setM_Type(1);
        scheduleAt(simTime() + timeInterval, timer[next_frame_to_send]);
@@ -63,6 +63,7 @@ void Node::initialize()
     ack_expected=0;
     frame_expected=0;
     nbuffered=0;
+    endSession=false;
 }
 
 void Node::handleMessage(cMessage *msg)
@@ -82,7 +83,12 @@ void Node::handleMessage(cMessage *msg)
         inc(ack_expected);
     }
     }
-    //if the message is time out
+    //if the session has ended
+    if(mmsg->getM_Type()==3){
+        for(int i=0;i<MAX_SEQ+1;i++){
+           if(timer[i]) cancelAndDelete(timer[i]);
+        }
+    }
    if(mmsg->getM_Type()==1){
        EV<<"TIME OUT";
         next_frame_to_send=ack_expected;
@@ -92,6 +98,7 @@ void Node::handleMessage(cMessage *msg)
             inc(next_frame_to_send);
         }
     }
+   // }
     // a file received from parent module
     if(mmsg->getM_Type()==2){
         EV<<"FILE";
@@ -113,6 +120,9 @@ void Node::handleMessage(cMessage *msg)
             send_data();
             inc(next_frame_to_send);
         }
+        MyMessage_Base* fmsg=new MyMessage_Base("Hello");
+        fmsg->setM_Type(3);
+        send(fmsg,"outs",dest);
     }
     }
 int Node::received_messages=0;
