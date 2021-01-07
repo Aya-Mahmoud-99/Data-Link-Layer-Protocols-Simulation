@@ -38,7 +38,7 @@ class Node : public cSimpleModule
     // to calculate
     std::ifstream fileIn;
     int noElementsFile;
-    int timeInterval=100000;
+    int timeInterval=2;
     bool endSession;
     MyMessage_Base* timer[MAX_SEQ+1];
     static int received_messages;

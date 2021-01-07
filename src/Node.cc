@@ -35,6 +35,7 @@ void Node::send_data(){
        }
        else{
            dropped_frames++;
+           EV<<"DROPPED";
        }
        int rand2=uniform(0,1)*10;
        if(rand2<par("pDup").intValue()) // prob to delay the message
